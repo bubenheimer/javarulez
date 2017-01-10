@@ -2,19 +2,16 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
+package org.bubenheimer.rulez;
 
-import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.bubenheimer.android.log.Log;
-
-import static org.bubenheimer.android.rulez.RuleEngine.formatState;
+import static org.bubenheimer.rulez.RuleEngine.formatState;
 
 @SuppressWarnings("WeakerAccess")
 public final class FactState implements ReadableState, WritableState {
-    private static final String TAG = FactState.class.getSimpleName();
+    private static final Logger LOG = Logger.getLogger(FactState.class.getName());
 
     /**
      * The state (bit vector).
@@ -24,14 +21,12 @@ public final class FactState implements ReadableState, WritableState {
     /**
      * The associated rule engine.
      */
-    @NonNull
     private final RuleEngine ruleEngine;
 
     /**
      * @param ruleEngine the associated rule engine
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    FactState(@NonNull final RuleEngine ruleEngine) {
+    FactState(final RuleEngine ruleEngine) {
         this.ruleEngine = ruleEngine;
     }
 
@@ -48,10 +43,9 @@ public final class FactState implements ReadableState, WritableState {
     }
 
     /**
-     * @param state the state
+     * @param state the raw state bit vector (indicating what's true and what's false)
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    void setState(final int state) {
+    public void setState(final int state) {
         this.state = state;
     }
 
@@ -88,8 +82,10 @@ public final class FactState implements ReadableState, WritableState {
     private void addFactsInternal(final int factVector) {
         final int oldState = state;
         state |= factVector;
-        Log.v(TAG, "State change: ", formatState(oldState), " + ", formatState(factVector), " = ",
-                formatState(state));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("State change: " + formatState(oldState) + " + " + formatState(factVector)
+                    + " = " + formatState(state));
+        }
         stateChangeEval(oldState);
     }
 
@@ -118,8 +114,10 @@ public final class FactState implements ReadableState, WritableState {
     private void removeFactsInternal(final int factVector) {
         final int oldState = state;
         state &= ~factVector;
-        Log.v(TAG, "State change: ", formatState(oldState), " - ", formatState(factVector), " = ",
-                formatState(state));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("State change: " + formatState(oldState) + " - " + formatState(factVector)
+                    + " = " + formatState(state));
+        }
         stateChangeEval(oldState);
     }
 
@@ -157,8 +155,10 @@ public final class FactState implements ReadableState, WritableState {
     private void addRemoveFactsInternal(final int addFactVector, final int removeFactVector) {
         final int oldState = state;
         state = (state | addFactVector) & ~removeFactVector;
-        Log.v(TAG, "State change: ", formatState(oldState), " + ", formatState(addFactVector),
-                " - ", formatState(removeFactVector), " = ", formatState(state));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("State change: " + formatState(oldState) + " + " + formatState(addFactVector)
+                    + " - " + formatState(removeFactVector) + " = " + formatState(state));
+        }
         stateChangeEval(oldState);
     }
 
@@ -176,11 +176,11 @@ public final class FactState implements ReadableState, WritableState {
         if (fact.persistence == Fact.PERSISTENCE_DISK) {
             final RuleBase ruleBase = ruleEngine.getRuleBase();
             assert ruleBase != null;
-            final SharedPreferences sharedPreferences = ruleBase.sharedPreferences;
-            if (sharedPreferences != null) {
+            final PersistenceStore persistenceStore = ruleBase.persistenceStore;
+            if (persistenceStore != null) {
                 if (isSet && (state | factMask) != state ||
                         !isSet && (state & ~factMask) != state) {
-                    sharedPreferences.edit().putBoolean(fact.name, isSet).apply();
+                    persistenceStore.set(fact.id, fact.name, isSet);
                 }
             }
         }

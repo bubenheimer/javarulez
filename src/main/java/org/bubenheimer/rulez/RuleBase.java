@@ -2,24 +2,22 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
+package org.bubenheimer.rulez;
 
-import android.content.SharedPreferences;
-import android.support.annotation.Nullable;
-import android.support.annotation.RestrictTo;
 
-import org.bubenheimer.android.log.Log;
-import org.bubenheimer.android.rulez.fluent.Proposition;
+import org.bubenheimer.rulez.fluent.Proposition;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The rule engine's collection of rules
  */
 @SuppressWarnings("WeakerAccess")
 public class RuleBase {
-    private static final String TAG = RuleBase.class.getSimpleName();
+    private static final Logger LOG = Logger.getLogger(RuleBase.class.getName());
 
     /** Maximum number of facts. Change this to {@code 64} if long is used instead of int to
      * represent the fact state. */
@@ -36,21 +34,15 @@ public class RuleBase {
     /**
      * The rules
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     final ArrayList<Rule> rules = new ArrayList<>(MAX_RULES);
 
-    //TODO provide a slightly more elaborate persistence API to eliminate tight coupling
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Nullable
-    SharedPreferences sharedPreferences;
-
     /**
-     * @param sharedPreferences    a dedicated sharedPreferences object for saving and restoring
-     *                             persistent fact state. May be null to not save persistent state.
+     * @param persistenceStore a persistence store for saving and restoring persistent fact state.
+     *                         May be null to not use persistent state.
      */
     @SuppressWarnings("unused")
-    public void setSharedPreferences(@Nullable final SharedPreferences sharedPreferences) {
-        this.sharedPreferences = sharedPreferences;
+    public void setPersistenceStore(final PersistenceStore persistenceStore) {
+        this.persistenceStore = persistenceStore;
     }
 
     /**
@@ -75,13 +67,16 @@ public class RuleBase {
         if (factIdCounter >= MAX_FACTS) {
             throw new AssertionError("Too many facts");
         } else {
-            Log.v(TAG, "ID ", String.format(Locale.getDefault(), "%2d", factIdCounter),
-                    " for new fact ", name);
+            if (LOG.isLoggable(Level.FINE)) {
+                LOG.fine(String.format(Locale.US, "ID %2d for new fact %s", factIdCounter, name));
+            }
             final Fact fact = new Fact(factIdCounter, name, persistence);
             facts[factIdCounter++] = fact;
             return fact;
         }
     }
+
+    PersistenceStore persistenceStore;
 
     public int getFactCount() {
         return factIdCounter;

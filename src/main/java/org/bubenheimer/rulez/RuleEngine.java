@@ -2,22 +2,18 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
-
-import android.content.SharedPreferences;
-import android.support.annotation.CallSuper;
-import android.support.annotation.Nullable;
-
-import org.bubenheimer.android.log.Log;
+package org.bubenheimer.rulez;
 
 import java.lang.ref.WeakReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstract rule engine missing an evaluation strategy.
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class RuleEngine {
-    private static final String TAG = RuleEngine.class.getSimpleName();
+    private static final Logger LOG = Logger.getLogger(RuleEngine.class.getName());
 
     /**
      * The fact state (bit vector).
@@ -27,7 +23,7 @@ public abstract class RuleEngine {
     /**
      * Listener to be invoked when rule evaluation ends.
      */
-    @Nullable private EvalEndListener evalEndListener;
+    private EvalEndListener evalEndListener;
 
     /**
      * A weak reference to the rule base.
@@ -46,7 +42,6 @@ public abstract class RuleEngine {
      * Clears the rule base and clears the rule engine state.
      */
     @SuppressWarnings("unused")
-    @CallSuper
     public void clear() {
         if (ruleBaseRef != null) {
             ruleBaseRef.clear();
@@ -58,7 +53,6 @@ public abstract class RuleEngine {
     /**
      * Clears the rule engine state
      */
-    @CallSuper
     public void clearState() {
         factState.clear();
     }
@@ -67,7 +61,6 @@ public abstract class RuleEngine {
      * @return the listener to be invoked when rule evaluation ends. May be null.
      */
     @SuppressWarnings("unused")
-    @Nullable
     public final EvalEndListener getEvalEndListener() {
         return evalEndListener;
     }
@@ -76,7 +69,7 @@ public abstract class RuleEngine {
      * @param listener the listener to be invoked when rule evaluation ends. May be null.
      */
     @SuppressWarnings("WeakerAccess")
-    public final void setEvalEndListener(@Nullable final EvalEndListener listener) {
+    public final void setEvalEndListener(final EvalEndListener listener) {
         evalEndListener = listener;
     }
 
@@ -84,7 +77,6 @@ public abstract class RuleEngine {
      * @return the rule base. May be null.
      */
     @SuppressWarnings("WeakerAccess")
-    @Nullable
     public final RuleBase getRuleBase() {
         return ruleBaseRef.get();
     }
@@ -98,14 +90,14 @@ public abstract class RuleEngine {
     public void setRuleBase(final RuleBase ruleBase) {
         ruleBaseRef = new WeakReference<>(ruleBase);
         if (ruleBase != null) {
-            final SharedPreferences sharedPreferences = ruleBase.sharedPreferences;
-            if (sharedPreferences != null) {
+            final PersistenceStore persistenceStore = ruleBase.persistenceStore;
+            if (persistenceStore != null) {
                 final int factCount = ruleBase.getFactCount();
                 int initState = factState.getState();
                 for (int i = 0; i < factCount; ++i) {
                     final Fact fact = ruleBase.facts[i];
                     if (fact.persistence == Fact.PERSISTENCE_DISK) {
-                        if (sharedPreferences.getBoolean(fact.name, false)) {
+                        if (persistenceStore.get(fact.id, fact.name)) {
                             initState |= 1 << fact.id;
                         }
                     }
@@ -125,9 +117,10 @@ public abstract class RuleEngine {
      * when evaluation has concluded.
      */
     @SuppressWarnings("WeakerAccess")
-    @CallSuper
     protected final void handleEvaluationEnd() {
-        Log.v(TAG, "Evaluation ended: ", formatState(factState.getState()));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("Evaluation ended: " + formatState(factState.getState()));
+        }
 
         if (evalEndListener != null) {
             evalEndListener.onEvalEnd(this);

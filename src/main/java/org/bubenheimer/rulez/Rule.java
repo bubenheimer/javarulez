@@ -2,10 +2,7 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
-
-import android.support.annotation.IntDef;
-import android.support.annotation.RestrictTo;
+package org.bubenheimer.rulez;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,7 +21,6 @@ public final class Rule {
      */
     @SuppressWarnings("WeakerAccess")
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({MATCH_ONCE, MATCH_RESET, MATCH_ALWAYS})
     public @interface MatchType {}
 
     /**
@@ -55,7 +51,6 @@ public final class Rule {
      * conditions it becomes eligible to re-match.
      */
     @MatchType
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     final int matchType;
 
     /**
@@ -71,7 +66,6 @@ public final class Rule {
     /**
      * The rule action to execute when the rule fires.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     RuleAction ruleAction;
 
     /**
@@ -165,7 +159,6 @@ public final class Rule {
      * @param state the fact state to use for evaluation
      * @return whether the left-hand side matches the fact state
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     boolean eval(final int state) {
         for (final int condition : conditions) {
             if ((state & condition) != condition) {

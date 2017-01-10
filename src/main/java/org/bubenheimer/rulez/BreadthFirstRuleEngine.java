@@ -2,11 +2,10 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
+package org.bubenheimer.rulez;
 
-import android.support.annotation.RestrictTo;
-
-import org.bubenheimer.android.log.Log;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>A rule engine where conceptually the evaluation strategy checks for each rule whether its
@@ -23,7 +22,7 @@ import org.bubenheimer.android.log.Log;
  */
 @SuppressWarnings("WeakerAccess")
 public class BreadthFirstRuleEngine extends RuleEngine {
-    private static final String TAG = BreadthFirstRuleEngine.class.getSimpleName();
+    private static final Logger LOG = Logger.getLogger(BreadthFirstRuleEngine.class.getName());
 
     /**
      * A bit mask for the match state of all rules. Indicates whether a rule has already fired.
@@ -67,7 +66,6 @@ public class BreadthFirstRuleEngine extends RuleEngine {
      * already fired.
      */
     @SuppressWarnings("WeakerAccess")
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     protected final int getRuleMatchState() {
         return ruleMatchState;
     }
@@ -77,7 +75,6 @@ public class BreadthFirstRuleEngine extends RuleEngine {
      * @param state A bit mask for the match state of all rules.
      */
     @SuppressWarnings("WeakerAccess")
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     protected final void setRuleMatchState(final int state) {
         ruleMatchState = state;
     }
@@ -116,14 +113,15 @@ public class BreadthFirstRuleEngine extends RuleEngine {
      * Evaluates the rule base.
      */
     @SuppressWarnings("WeakerAccess")
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     protected final void evaluate() {
         final RuleBase ruleBase = getRuleBase();
         if (ruleBase == null) {
             return;
         }
         baseState.state = getFactState().getState();
-        Log.v(TAG, "Evaluating: ", formatState(baseState.state));
+        if (LOG.isLoggable(Level.FINE)) {
+            LOG.fine("Evaluating: " + formatState(baseState.state));
+        }
         int evaluatedMask = 1;
         final int ruleCount = ruleBase.rules.size();
         for (int i = 0; i < ruleCount; ++i) {
@@ -133,13 +131,17 @@ public class BreadthFirstRuleEngine extends RuleEngine {
                 if (rule.eval(baseState.state)) {
                     if (rule.matchType == Rule.MATCH_ALWAYS
                             || (ruleMatchState & evaluatedMask) == 0) {
-                        Log.v(TAG, "Rule fired: ", rule);
+                        if (LOG.isLoggable(Level.FINE)) {
+                            LOG.fine("Rule fired: " + rule);
+                        }
                         ruleMatchState |= evaluatedMask;
                         rule.ruleAction.fire(baseState, getFactState());
                     }
                 } else if (rule.matchType == Rule.MATCH_RESET
                         && (ruleMatchState & evaluatedMask) != 0) {
-                    Log.v(TAG, "Rule reset: ", rule);
+                    if (LOG.isLoggable(Level.FINE)) {
+                        LOG.fine("Rule reset: " + rule);
+                    }
                     ruleMatchState ^= evaluatedMask;
                 }
             }

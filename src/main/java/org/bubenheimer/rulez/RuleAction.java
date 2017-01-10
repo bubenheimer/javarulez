@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
+package org.bubenheimer.rulez;
 
 /**
  * Represents the action (right-hand side) of a rule with code to execute if the left-hand side

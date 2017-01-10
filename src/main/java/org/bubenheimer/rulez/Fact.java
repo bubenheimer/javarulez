@@ -2,10 +2,7 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
-
-import android.support.annotation.IntDef;
-import android.support.annotation.RestrictTo;
+package org.bubenheimer.rulez;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -19,7 +16,6 @@ public final class Fact {
      */
     @SuppressWarnings("WeakerAccess")
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({PERSISTENCE_NONE, PERSISTENCE_DISK})
     public @interface Persistence {}
     /**
      * No fact state persistence.
@@ -36,20 +32,17 @@ public final class Fact {
     /**
      * The internal fact id
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     final int id;
 
     /**
      * Fact name
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     final String name;
 
     /**
      * Persistence type. Specifies whether fact state is persistent or not.
      */
     @Persistence
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     final int persistence;
 
     /**
@@ -58,7 +51,6 @@ public final class Fact {
      * @param name          a unique fact name
      * @param persistence   fact state persistence type
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     Fact(final int id, final String name, @Persistence final int persistence) {
         this.id = id;
         this.name = name;

@@ -2,11 +2,11 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez.fluent;
+package org.bubenheimer.rulez.fluent;
 
-import org.bubenheimer.android.rulez.Fact;
-import org.bubenheimer.android.rulez.Rule;
-import org.bubenheimer.android.rulez.RuleAction;
+import org.bubenheimer.rulez.Fact;
+import org.bubenheimer.rulez.Rule;
+import org.bubenheimer.rulez.RuleAction;
 
 /**
  * Represents a rule in the fluent API.

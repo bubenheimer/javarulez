@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2017 Uli Bubenheimer. All rights reserved.
  */
 
-package org.bubenheimer.android.rulez;
+package org.bubenheimer.rulez;
 
 /**
  * API for modifying the fact state
