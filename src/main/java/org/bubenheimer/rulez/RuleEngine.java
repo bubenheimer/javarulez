@@ -28,7 +28,7 @@ public abstract class RuleEngine {
     /**
      * A weak reference to the rule base.
      */
-    private WeakReference<RuleBase> ruleBaseRef;
+    private WeakReference<RuleBase> ruleBaseRef = new WeakReference<>(null);
 
     /**
      * @return the fact state (what's true and what's false)
@@ -43,10 +43,7 @@ public abstract class RuleEngine {
      */
     @SuppressWarnings("unused")
     public void clear() {
-        if (ruleBaseRef != null) {
-            ruleBaseRef.clear();
-            ruleBaseRef = null;
-        }
+        ruleBaseRef.clear();
         clearState();
     }
 
