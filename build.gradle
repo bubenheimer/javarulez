@@ -16,28 +16,20 @@
  */
 
 apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+group = 'org.bubenheimer'
+version = '1.0-SNAPSHOT'
 
 //noinspection GroovyUnusedAssignment
 sourceCompatibility = JavaVersion.VERSION_1_8
 //noinspection GroovyUnusedAssignment
 targetCompatibility = JavaVersion.VERSION_1_8
 
-version=VERSION_NAME
-
-jar {
-    manifest {
-        attributes 'Implementation-Title': 'JavaRulez',
-                'Implementation-Version': version
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
     }
 }
-
-repositories {
-    maven { url MAVEN_REPOSITORY_URL}
-}
-
-//compileJava {
-//    //Disable warning about -source=1.7 and setting bootclasspath to 1.7 libraries
-//    options.compilerArgs << "-Xlint:-options"
-//}
-
-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
