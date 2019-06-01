@@ -19,11 +19,11 @@ import net.ltgt.gradle.errorprone.CheckSeverity
 
 buildscript {
     repositories {
-        maven { url 'https://plugins.gradle.org/m2/' }
+        gradlePluginPortal()
     }
 
     dependencies {
-        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6.1'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.8'
     }
 }
 
@@ -57,7 +57,7 @@ tasks.withType(JavaCompile) {
 }
 
 dependencies {
-    errorprone 'com.google.errorprone:error_prone_core:2.3.2'
+    errorprone 'com.google.errorprone:error_prone_core:2.3.3'
     //noinspection GradleDynamicVersion
     errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
 }
