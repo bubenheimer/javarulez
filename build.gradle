@@ -15,8 +15,6 @@
  *
  */
 
-import net.ltgt.gradle.errorprone.CheckSeverity
-
 buildscript {
     repositories {
         gradlePluginPortal()
@@ -53,7 +51,9 @@ publishing {
 }
 
 tasks.withType(JavaCompile) {
-    options.errorprone.check('OperatorPrecedence', CheckSeverity.OFF)
+    afterEvaluate {
+        options.errorprone.check('OperatorPrecedence', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+    }
 }
 
 dependencies {
