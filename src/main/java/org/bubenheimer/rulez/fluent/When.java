@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,19 +41,14 @@ public final class When {
 
     @SuppressWarnings("UnusedReturnValue")
     public When or(final Fact fact) {
-        if (!facts.isEmpty()) {
-            rule.addCondition(facts);
-        }
-        facts.clear();
+        completeConjunction();
         facts.add(fact);
         return this;
     }
 
     @SuppressWarnings("unused")
     public WhenNot andNot(final Fact fact) {
-        if (!facts.isEmpty()) {
-            rule.addCondition(facts);
-        }
+        completeConjunction();
         final WhenNot whenNot = new WhenNot(rule);
         whenNot.or(fact);
         return whenNot;
@@ -61,10 +56,16 @@ public final class When {
 
     @SuppressWarnings("unused")
     public Rule then(final RuleAction ruleAction) {
-        if (!facts.isEmpty()) {
-            rule.addCondition(facts);
-        }
+        completeConjunction();
         rule.setRuleAction(ruleAction);
         return rule;
+    }
+
+    public void completeConjunction(
+    ) {
+        if (!facts.isEmpty()) {
+            rule.addCondition(facts);
+            facts.clear();
+        }
     }
 }
