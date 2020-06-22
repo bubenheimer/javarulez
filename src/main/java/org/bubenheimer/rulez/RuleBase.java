@@ -19,6 +19,7 @@ package org.bubenheimer.rulez;
 
 
 import org.bubenheimer.rulez.fluent.Proposition;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -64,7 +65,7 @@ public class RuleBase {
      * @return the new fact
      */
     @SuppressWarnings("unused")
-    public Fact newFact(final String name) {
+    public @NotNull Fact newFact(final String name) {
         return newFact(name, Fact.PERSISTENCE_NONE);
     }
 
@@ -74,7 +75,7 @@ public class RuleBase {
      * @param persistence   fact state persistence
      * @return the new fact
      */
-    public Fact newFact(
+    public @NotNull Fact newFact(
             final String name,
             @SuppressWarnings("SameParameterValue") @Fact.Persistence final int persistence) {
         if (factIdCounter >= MAX_FACTS) {
@@ -102,7 +103,7 @@ public class RuleBase {
      * @param name rule name
      * @return a builder instance
      */
-    public Proposition rule(final String name) {
+    public @NotNull Proposition rule(final String name) {
         return rule(name, Rule.MATCH_ALWAYS);
     }
 
@@ -113,7 +114,7 @@ public class RuleBase {
      *                     or under what conditions it becomes eligible to re-run.
      * @return a builder instance
      */
-    public Proposition rule(
+    public @NotNull Proposition rule(
             final String name,
             @SuppressWarnings("SameParameterValue") @Rule.MatchType final int matchType) {
         if (rules.size() >= MAX_RULES) {

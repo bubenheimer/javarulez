@@ -60,4 +60,6 @@ dependencies {
     errorprone 'com.google.errorprone:error_prone_core:2.3.4'
     //noinspection GradleDynamicVersion
     errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
+
+    implementation 'org.jetbrains:annotations:19.0.0'
 }
