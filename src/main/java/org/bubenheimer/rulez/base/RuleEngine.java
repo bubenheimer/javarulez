@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
 
-import java.lang.ref.WeakReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,13 +24,13 @@ import java.util.logging.Logger;
  * Abstract rule engine missing an evaluation strategy.
  */
 @SuppressWarnings("WeakerAccess")
-public abstract class RuleEngine {
+public abstract class RuleEngine <F extends Fact, R extends Rule<F>> {
     private static final Logger LOG = Logger.getLogger(RuleEngine.class.getName());
 
     /**
-     * The fact state (bit vector).
+     * The fact state with engine reference.
      */
-    private final FactState factState = new FactState(this);
+    private final EngineFactState<F> engineFactState;
 
     /**
      * Listener to be invoked when rule evaluation ends.
@@ -39,32 +38,39 @@ public abstract class RuleEngine {
     private EvalEndListener evalEndListener;
 
     /**
-     * A weak reference to the rule base.
+     * The rule base.
      */
-    private WeakReference<RuleBase> ruleBaseRef = new WeakReference<>(null);
+    private final RuleBase<F,R> ruleBase;
+
+    /**
+     * @param factState the fact state (bit vector); may be modified
+     * @param ruleBase the rule base (may overwrite initial fact state)
+     */
+    public RuleEngine(final FactState<F> factState, final RuleBase<F, R> ruleBase) {
+        this.engineFactState = new EngineFactState<>(this, factState);
+        this.ruleBase = ruleBase;
+    }
 
     /**
      * @return the fact state (what's true and what's false)
      */
     @SuppressWarnings("WeakerAccess")
-    public final FactState getFactState() {
-        return factState;
+    public final FactState<F> getFactState() {
+        return engineFactState.childFactState;
     }
 
     /**
-     * Clears the rule base and clears the rule engine state.
+     * @return readable fact state
      */
-    @SuppressWarnings("unused")
-    public void clear() {
-        ruleBaseRef.clear();
-        clearState();
+    public final ReadableState<F> getReadableState() {
+        return engineFactState;
     }
 
     /**
-     * Clears the rule engine state
+     * @return writable fact state
      */
-    public void clearState() {
-        factState.clear();
+    public final WritableState<F> getWritableState() {
+        return engineFactState;
     }
 
     /**
@@ -84,37 +90,11 @@ public abstract class RuleEngine {
     }
 
     /**
-     * @return the rule base. May be null.
+     * @return the rule base.
      */
     @SuppressWarnings("WeakerAccess")
-    public final RuleBase getRuleBase() {
-        return ruleBaseRef.get();
-    }
-
-    /**
-     * Sets the rule base. If the rule base is not {@code null},
-     * it needs to be completely initialized.
-     *
-     * @param ruleBase the rule base. May be {@code null}.
-     */
-    public void setRuleBase(final RuleBase ruleBase) {
-        ruleBaseRef = new WeakReference<>(ruleBase);
-        if (ruleBase != null) {
-            final PersistenceStore persistenceStore = ruleBase.persistenceStore;
-            if (persistenceStore != null) {
-                final int factCount = ruleBase.getFactCount();
-                int initState = factState.getState();
-                for (int i = 0; i < factCount; ++i) {
-                    final Fact fact = ruleBase.facts[i];
-                    if (fact.persistence == Fact.PERSISTENCE_DISK) {
-                        if (persistenceStore.get(fact.id, fact.name)) {
-                            initState |= 1 << fact.id;
-                        }
-                    }
-                }
-                factState.setState(initState);
-            }
-        }
+    public final RuleBase<F,R> getRuleBase() {
+        return ruleBase;
     }
 
     /**
@@ -129,7 +109,7 @@ public abstract class RuleEngine {
     @SuppressWarnings("WeakerAccess")
     protected final void handleEvaluationEnd() {
         if (LOG.isLoggable(Level.FINE)) {
-            LOG.fine("Evaluation ended: " + formatState(factState.getState()));
+            LOG.fine("Evaluation ended: " + formatState(engineFactState.childFactState.getState()));
         }
 
         if (evalEndListener != null) {
@@ -146,5 +126,64 @@ public abstract class RuleEngine {
     @SuppressWarnings("WeakerAccess")
     protected static String formatState(final int value) {
         return Integer.toBinaryString(value);
+    }
+}
+
+final class EngineFactState <F extends Fact> implements ReadableState<F>, WritableState<F> {
+    private final RuleEngine<F, ?> ruleEngine;
+    final FactState<F> childFactState;
+
+    EngineFactState(final RuleEngine<F, ?> ruleEngine, final FactState<F> childFactState) {
+        this.ruleEngine = ruleEngine;
+        this.childFactState = childFactState;
+    }
+
+    @Override
+    final public boolean isValid(F fact) {
+        return childFactState.isValid(fact);
+    }
+
+    @Override
+    final public void addFact(F fact) {
+        if (childFactState.addFact(fact)) {
+            ruleEngine.scheduleEvaluation();
+        }
+    }
+
+    @SafeVarargs
+    @Override
+    final public void addFacts(F... facts) {
+        if (childFactState.addFacts(facts)) {
+            ruleEngine.scheduleEvaluation();
+        }
+    }
+
+    @Override
+    final public void removeFact(F fact) {
+        if (childFactState.removeFact(fact)) {
+            ruleEngine.scheduleEvaluation();
+        }
+    }
+
+    @SafeVarargs
+    @Override
+    final public void removeFacts(F... facts) {
+        if (childFactState.removeFacts(facts)) {
+            ruleEngine.scheduleEvaluation();
+        }
+    }
+
+    @Override
+    final public void addRemoveFacts(F addFact, F removeFact) {
+        if (childFactState.addRemoveFacts(addFact, removeFact)) {
+            ruleEngine.scheduleEvaluation();
+        }
+    }
+
+    @Override
+    final public void addRemoveFacts(F[] addFacts, F[] removeFacts) {
+        if (childFactState.addRemoveFacts(addFacts, removeFacts)) {
+            ruleEngine.scheduleEvaluation();
+        }
     }
 }

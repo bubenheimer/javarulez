@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,149 +15,201 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.bubenheimer.rulez.RuleEngine.formatState;
+import static org.bubenheimer.rulez.base.RuleEngine.formatState;
 
 @SuppressWarnings("WeakerAccess")
-public final class FactState implements ReadableState, WritableState {
+public final class FactState <F extends Fact> {
     private static final Logger LOG = Logger.getLogger(FactState.class.getName());
+
+    public interface FactChangeListener <F extends Fact> {
+        void onFactChange(F fact, int factMask, boolean isSet, int state);
+    }
+
+    private final FactChangeListener<F> factChangeListener;
 
     /**
      * The state (bit vector).
      */
-    private int state = 0;
+    private int state;
 
-    /**
-     * The associated rule engine.
-     */
-    private final RuleEngine ruleEngine;
-
-    /**
-     * @param ruleEngine the associated rule engine
-     */
-    FactState(final RuleEngine ruleEngine) {
-        this.ruleEngine = ruleEngine;
+    public FactState() {
+        this(null);
     }
 
-    @Override
-    public boolean isValid(final Fact fact) {
+    /**
+     * @param factChangeListener listener for fact changes
+     */
+    public FactState(final FactChangeListener<F> factChangeListener) {
+        this(0, factChangeListener);
+    }
+
+    /**
+     * @param rawState the raw state bit vector (indicating what's true and what's false)
+     */
+    public FactState(final int rawState) {
+        this(rawState, null);
+    }
+
+    /**
+     * @param rawState the raw state bit vector (indicating what's true and what's false)
+     * @param factChangeListener listener for fact changes
+     */
+    public FactState(final int rawState, final FactChangeListener<F> factChangeListener) {
+        this.state = rawState;
+        this.factChangeListener = factChangeListener;
+    }
+
+    /**
+     * @return whether the fact is valid (true)
+     */
+    final boolean isValid(final F fact) {
         return (state & (1 << fact.id)) != 0;
     }
 
     /**
      * @return the raw state bit vector (indicating what's true and what's false)
      */
-    public int getState() {
+    final public int getState() {
         return state;
     }
 
     /**
-     * @param state the raw state bit vector (indicating what's true and what's false)
+     * Adds a fact to the state.
+     * @param fact the fact to add
+     * @return {@code true} iff the state changed
      */
-    public void setState(final int state) {
-        this.state = state;
+    final boolean addFact(final F fact) {
+        final int factMask = 1 << fact.id;
+        if (factChangeListener != null) {
+            factChangeListener.onFactChange(fact, factMask, true, state);
+        }
+        return addFactsInternal(factMask);
     }
 
     /**
-     * Resets the state, all facts turn false (no facts added).
+     * Adds facts to the state
+     * @param facts the facts to add
+     * @return {@code true} iff the state changed
      */
-    @SuppressWarnings("WeakerAccess")
-    public void clear() {
-        state = 0;
-    }
-
-    @Override
-    public void addFact(final Fact fact) {
-        final int factMask = 1 << fact.id;
-        checkFactChange(fact, factMask, true);
-        addFactsInternal(factMask);
-    }
-
-    @Override
-    public void addFacts(final Fact... facts) {
+    @SafeVarargs
+    final boolean addFacts(final F... facts) {
         int factVector = 0;
-        for (final Fact fact : facts) {
+        for (final F fact : facts) {
             final int factMask = 1 << fact.id;
-            checkFactChange(fact, factMask, true);
+            if (factChangeListener != null) {
+                factChangeListener.onFactChange(fact, factMask, true, state);
+            }
             factVector |= factMask;
         }
-        addFactsInternal(factVector);
+        return addFactsInternal(factVector);
     }
 
     /**
      * Adds the facts from a fact bit vector.
      * @param factVector the fact bit vector
      */
-    private void addFactsInternal(final int factVector) {
+    private boolean addFactsInternal(final int factVector) {
         final int oldState = state;
         state |= factVector;
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine("State change: " + formatState(oldState) + " + " + formatState(factVector)
                     + " = " + formatState(state));
         }
-        stateChangeEval(oldState);
+        return oldState != state;
     }
 
-    @Override
-    public void removeFact(final Fact fact) {
+    /**
+     * Removes a fact from the state.
+     * @param fact the fact to remove
+     * @return {@code true} iff the state changed
+     */
+    final boolean removeFact(final F fact) {
         final int factMask = 1 << fact.id;
-        checkFactChange(fact, factMask, false);
-        removeFactsInternal(factMask);
+        if (factChangeListener != null) {
+            factChangeListener.onFactChange(fact, factMask, false, state);
+        }
+        return removeFactsInternal(factMask);
     }
 
-    @Override
-    public void removeFacts(final Fact... facts) {
+    /**
+     * Removes facts from the state.
+     * @param facts the facts to remove
+     * @return {@code true} iff the state changed
+     */
+    @SafeVarargs
+    final boolean removeFacts(final F... facts) {
         int factVector = 0;
-        for (final Fact fact : facts) {
+        for (final F fact : facts) {
             final int factMask = 1 << fact.id;
-            checkFactChange(fact, factMask, false);
+            if (factChangeListener != null) {
+                factChangeListener.onFactChange(fact, factMask, false, state);
+            }
             factVector |= factMask;
         }
-        removeFactsInternal(factVector);
+        return removeFactsInternal(factVector);
     }
 
     /**
      * Removes the facts from a fact bit vector.
      * @param factVector the fact bit vector
      */
-    private void removeFactsInternal(final int factVector) {
+    private boolean removeFactsInternal(final int factVector) {
         final int oldState = state;
         state &= ~factVector;
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine("State change: " + formatState(oldState) + " - " + formatState(factVector)
                     + " = " + formatState(state));
         }
-        stateChangeEval(oldState);
+        return oldState != state;
     }
 
-    @Override
-    public void addRemoveFacts(final Fact addFact, final Fact removeFact) {
+    /**
+     * Adds a fact to the state and removes a fact from the state in a single operation.
+     * @param addFact       the fact to add
+     * @param removeFact    the fact to remove
+     * @return {@code true} iff the state changed
+     */
+    boolean addRemoveFacts(final F addFact, final F removeFact) {
         final int addFactMask = 1 << addFact.id;
-        checkFactChange(addFact, addFactMask, true);
+        if (factChangeListener != null) {
+            factChangeListener.onFactChange(addFact, addFactMask, true, state);
+        }
         final int removeFactMask = 1 << removeFact.id;
-        checkFactChange(removeFact, removeFactMask, false);
-        addRemoveFactsInternal(addFactMask, removeFactMask);
+        if (factChangeListener != null) {
+            factChangeListener.onFactChange(removeFact, removeFactMask, false, state);
+        }
+        return addRemoveFactsInternal(addFactMask, removeFactMask);
     }
 
-    @Override
-    public void addRemoveFacts(final Fact[] addFacts, final Fact[] removeFacts) {
+    /**
+     * Adds facts to the state and removes facts from the state in a single operation.
+     * @param addFacts      the facts to add
+     * @param removeFacts   the facts to remove
+     * @return {@code true} iff the state changed
+     */
+    boolean addRemoveFacts(final F[] addFacts, final F[] removeFacts) {
         int addFactVector = 0;
-        for (final Fact fact : addFacts) {
+        for (final F fact : addFacts) {
             final int factMask = 1 << fact.id;
-            checkFactChange(fact, factMask, true);
+            if (factChangeListener != null) {
+                factChangeListener.onFactChange(fact, factMask, true, state);
+            }
             addFactVector |= factMask;
         }
         int removeFactVector = 0;
-        for (final Fact fact : removeFacts) {
+        for (final F fact : removeFacts) {
             final int factMask = 1 << fact.id;
-            checkFactChange(fact, factMask, false);
+            if (factChangeListener != null) {
+                factChangeListener.onFactChange(fact, factMask, false, state);
+            }
             removeFactVector |= factMask;
         }
-        addRemoveFactsInternal(addFactVector, removeFactVector);
+        return addRemoveFactsInternal(addFactVector, removeFactVector);
     }
 
     /**
@@ -165,37 +217,13 @@ public final class FactState implements ReadableState, WritableState {
      * @param addFactVector      the facts to add
      * @param removeFactVector   the facts to remove
      */
-    private void addRemoveFactsInternal(final int addFactVector, final int removeFactVector) {
+    private boolean addRemoveFactsInternal(final int addFactVector, final int removeFactVector) {
         final int oldState = state;
         state = (state | addFactVector) & ~removeFactVector;
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine("State change: " + formatState(oldState) + " + " + formatState(addFactVector)
                     + " - " + formatState(removeFactVector) + " = " + formatState(state));
         }
-        stateChangeEval(oldState);
-    }
-
-    /**
-     * Schedules an evaluation if the current state is different from the passed previous one.
-     * @param oldState the previous state
-     */
-    private void stateChangeEval(final int oldState) {
-        if (oldState != state) {
-            ruleEngine.scheduleEvaluation();
-        }
-    }
-
-    private void checkFactChange(final Fact fact, final int factMask, final boolean isSet) {
-        if (fact.persistence == Fact.PERSISTENCE_DISK) {
-            final RuleBase ruleBase = ruleEngine.getRuleBase();
-            assert ruleBase != null;
-            final PersistenceStore persistenceStore = ruleBase.persistenceStore;
-            if (persistenceStore != null) {
-                if (isSet && (state | factMask) != state ||
-                        !isSet && (state & ~factMask) != state) {
-                    persistenceStore.set(fact.id, fact.name, isSet);
-                }
-            }
-        }
+        return oldState != state;
     }
 }

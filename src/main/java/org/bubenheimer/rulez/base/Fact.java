@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,66 +15,52 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A fact
  */
-public final class Fact {
-    /**
-     * Persistence type. Specifies whether fact state is persistent or not.
-     */
-    @SuppressWarnings("WeakerAccess")
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface Persistence {}
-    /**
-     * No fact state persistence.
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final int PERSISTENCE_NONE = 0;
-    /**
-     * Fact state is persistent for the life of the app installation. Uninstalling the app or
-     * clearing app data clears fact state.
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final int PERSISTENCE_DISK = 1;
-
-    /**
-     * The internal fact id
-     */
-    final int id;
-
-    /**
-     * Fact name
-     */
-    final String name;
-
-    /**
-     * Persistence type. Specifies whether fact state is persistent or not.
-     */
-    @Persistence
-    final int persistence;
-
-    /**
-     * Creates a new fact
-     * @param id            the internal fact id. All facts in a rule base must have distinct IDs.
-     * @param name          a unique fact name
-     * @param persistence   fact state persistence type
-     */
-    Fact(final int id, final String name, @Persistence final int persistence) {
-        this.id = id;
-        this.name = name;
-        this.persistence = persistence;
+public class Fact {
+    static public class FactCreator implements FactBase.FactCreator<Fact> {
+        @Override
+        public @NotNull Fact create(int id) {
+            return new Fact(id);
+        }
     }
 
     /**
-     * @return the fact's ID within a given rule base.
+     * The fact's ID within a given rule base
      */
-    @SuppressWarnings("unused")
-    public int getId() {
-        return id;
+    public final int id;
+
+    /**
+     * Creates a new fact
+     * @param id the internal fact id. All facts in a rule base must have distinct IDs.
+     */
+    public Fact(final int id) {
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "Fact " + id;
+    }
+
+    public final boolean getFactValue(final int factState) {
+        return ((factState >>> id) & 1) == 1;
+    }
+
+    public final int applyToFactState(final boolean value, final int factState) {
+        if (value) {
+            return factState | getMask();
+        } else {
+            return factState & ~getMask();
+        }
+    }
+
+    public final int getMask() {
+        return 1 << id;
     }
 }
