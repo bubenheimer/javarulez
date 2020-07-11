@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,39 +15,39 @@
  *
  */
 
-package org.bubenheimer.rulez.fluent;
+package org.bubenheimer.rulez.base.fluentrules;
 
-import org.bubenheimer.rulez.Fact;
-import org.bubenheimer.rulez.Rule;
-import org.bubenheimer.rulez.RuleAction;
+import org.bubenheimer.rulez.base.Fact;
+import org.bubenheimer.rulez.base.Rule;
+import org.bubenheimer.rulez.base.RuleAction;
 
 /**
  * Represents a rule in the fluent API.
  */
-public final class Proposition {
-    private final Rule rule;
+public final class Proposition <F extends Fact, R extends Rule<F>> {
+    private final R rule;
 
-    public Proposition(final Rule rule) {
+    public Proposition(final R rule) {
         this.rule = rule;
     }
 
     @SuppressWarnings("unused")
-    public When when(final Fact fact) {
-        final When when = new When(rule);
+    public When<F,R> when(final F fact) {
+        final When<F,R> when = new When<>(rule);
         when.or(fact);
         return when;
     }
 
     @SuppressWarnings("unused")
-    public WhenNot whenNot(final Fact fact) {
-        final WhenNot whenNot = new WhenNot(rule);
+    public WhenNot<F,R> whenNot(final F fact) {
+        final WhenNot<F,R> whenNot = new WhenNot<>(rule);
         whenNot.or(fact);
         return whenNot;
     }
 
     @SuppressWarnings("unused")
-    public Rule then(final RuleAction ruleAction) {
-        rule.setRuleAction(ruleAction);
+    public R then(final RuleAction<F> ruleAction) {
+        rule.ruleAction = ruleAction;
         return rule;
     }
 }

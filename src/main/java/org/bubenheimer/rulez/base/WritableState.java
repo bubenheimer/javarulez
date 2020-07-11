@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,40 +15,40 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
 
 /**
  * API for modifying the fact state
  */
 @SuppressWarnings("WeakerAccess")
-public interface WritableState {
+public interface WritableState <F extends Fact> {
     /**
      * Adds a fact to the state.
      * @param fact the fact to add
      */
     @SuppressWarnings("unused")
-    void addFact(Fact fact);
+    void addFact(F fact);
 
     /**
      * Adds facts to the state
      * @param facts the facts to add
      */
-    @SuppressWarnings("unused")
-    void addFacts(Fact... facts);
+    @SuppressWarnings({"unused", "unchecked"})
+    void addFacts(F... facts);
 
     /**
      * Removes a fact from the state.
      * @param fact the fact to remove
      */
     @SuppressWarnings("unused")
-    void removeFact(Fact fact);
+    void removeFact(F fact);
 
     /**
      * Removes facts from the state.
      * @param facts the facts to remove
      */
-    @SuppressWarnings("unused")
-    void removeFacts(Fact... facts);
+    @SuppressWarnings({"unused", "unchecked"})
+    void removeFacts(F... facts);
 
     /**
      * Adds a fact to the state and removes a fact from the state in a single operation.
@@ -56,7 +56,7 @@ public interface WritableState {
      * @param removeFact    the fact to remove
      */
     @SuppressWarnings("unused")
-    void addRemoveFacts(Fact addFact, Fact removeFact);
+    void addRemoveFacts(F addFact, F removeFact);
 
     /**
      * Adds facts to the state and removes facts from the state in a single operation.
@@ -64,5 +64,5 @@ public interface WritableState {
      * @param removeFacts   the facts to remove
      */
     @SuppressWarnings("unused")
-    void addRemoveFacts(Fact[] addFacts, Fact[] removeFacts);
+    void addRemoveFacts(F[] addFacts, F[] removeFacts);
 }

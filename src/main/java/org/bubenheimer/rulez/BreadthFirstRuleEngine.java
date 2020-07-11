@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,13 @@
  */
 
 package org.bubenheimer.rulez;
+
+import org.bubenheimer.rulez.base.Fact;
+import org.bubenheimer.rulez.base.FactState;
+import org.bubenheimer.rulez.base.ReadableState;
+import org.bubenheimer.rulez.base.Rule;
+import org.bubenheimer.rulez.base.RuleBase;
+import org.bubenheimer.rulez.base.RuleEngine;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,13 +41,13 @@ import java.util.logging.Logger;
  *
  */
 @SuppressWarnings("WeakerAccess")
-public class BreadthFirstRuleEngine extends RuleEngine {
+public class BreadthFirstRuleEngine <F extends Fact, R extends Rule<F>> extends RuleEngine<F,R> {
     private static final Logger LOG = Logger.getLogger(BreadthFirstRuleEngine.class.getName());
 
-    /**
-     * A bit mask for the match state of all rules. Indicates whether a rule has already fired.
-     */
-    private int ruleMatchState = 0;
+//    /**
+//     * A bit mask for the match state of all rules. Indicates whether a rule has already fired.
+//     */
+//    private int ruleMatchState;
 
     /**
      * Indicates whether an evaluation of the rule base has been scheduled due to changed state.
@@ -57,52 +64,45 @@ public class BreadthFirstRuleEngine extends RuleEngine {
      * A {@link ReadableState} representing the current rule base state to pass to rule bodies.
      * There is just a single one to avoid garbage collection issues.
      */
-    private final BaseState baseState = new BaseState();
+    private final BaseState<F> baseState = new BaseState<>();
 
     /**
      * Represents the current rule base state to pass to rule bodies.
      */
-    private static final class BaseState implements ReadableState {
+    private static final class BaseState <F extends Fact> implements ReadableState<F> {
         /**
          * the current state
          */
         int state;
 
         @Override
-        public boolean isValid(final Fact fact) {
+        public boolean isValid(final F fact) {
             return false;
         }
     }
 
-    /**
-     * @return a bit mask for the match state of all rules. Indicates whether a rule has
-     * already fired.
-     */
-    @SuppressWarnings("WeakerAccess")
-    protected final int getRuleMatchState() {
-        return ruleMatchState;
+    public BreadthFirstRuleEngine(final FactState<F> factState, final RuleBase<F, R> ruleBase) {
+        super(factState, ruleBase);
+//        this(ruleBase, factState, 0);
     }
 
-    /**
-     *
-     * @param state A bit mask for the match state of all rules.
-     */
-    @SuppressWarnings("WeakerAccess")
-    protected final void setRuleMatchState(final int state) {
-        ruleMatchState = state;
-    }
+//    public BreadthFirstRuleEngine(
+//            final RuleBase<F,R> ruleBase,
+//            final FactState<F> factState,
+//            final int ruleMatchState
+//    ) {
+//        super(ruleBase, factState);
+//        this.ruleMatchState = ruleMatchState;
+//    }
 
-    @Override
-    public void clearState() {
-        super.clearState();
-        ruleMatchState = 0;
-    }
-
-    @Override
-    public void setRuleBase(final RuleBase ruleBase) {
-        super.setRuleBase(ruleBase);
-        ruleMatchState = 0;
-    }
+//    /**
+//     * @return a bit mask for the match state of all rules. Indicates whether a rule has
+//     * already fired.
+//     */
+//    @SuppressWarnings("WeakerAccess")
+//    protected final int getRuleMatchState() {
+//        return ruleMatchState;
+//    }
 
     @Override
     protected void scheduleEvaluation() {
@@ -127,7 +127,7 @@ public class BreadthFirstRuleEngine extends RuleEngine {
      */
     @SuppressWarnings("WeakerAccess")
     protected final void evaluate() {
-        final RuleBase ruleBase = getRuleBase();
+        final RuleBase<F,R> ruleBase = getRuleBase();
         if (ruleBase == null) {
             return;
         }
@@ -135,30 +135,41 @@ public class BreadthFirstRuleEngine extends RuleEngine {
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine("Evaluating: " + formatState(baseState.state));
         }
-        int evaluatedMask = 1;
+//        int evaluatedMask = 1;
         final int ruleCount = ruleBase.rules.size();
         for (int i = 0; i < ruleCount; ++i) {
-            final Rule rule = ruleBase.rules.get(i);
-            if (rule.matchType != Rule.MATCH_ONCE
-                    || (ruleMatchState & evaluatedMask) == 0) {
-                if (rule.eval(baseState.state)) {
-                    if (rule.matchType == Rule.MATCH_ALWAYS
-                            || (ruleMatchState & evaluatedMask) == 0) {
-                        if (LOG.isLoggable(Level.FINE)) {
-                            LOG.fine("Rule fired: " + rule);
-                        }
-                        ruleMatchState |= evaluatedMask;
-                        rule.ruleAction.fire(baseState, getFactState());
-                    }
-                } else if (rule.matchType == Rule.MATCH_RESET
-                        && (ruleMatchState & evaluatedMask) != 0) {
-                    if (LOG.isLoggable(Level.FINE)) {
-                        LOG.fine("Rule reset: " + rule);
-                    }
-                    ruleMatchState ^= evaluatedMask;
-                }
+            final R rule = ruleBase.rules.get(i);
+            matchRule(rule);
+            //TODO
+//            if (rule.matchType != Rule.MATCH_ONCE
+//                    || (ruleMatchState & evaluatedMask) == 0) {
+//                if (rule.eval(baseState.state)) {
+//                    if (rule.matchType == Rule.MATCH_ALWAYS
+//                            || (ruleMatchState & evaluatedMask) == 0) {
+//                        if (LOG.isLoggable(Level.FINE)) {
+//                            LOG.fine("Rule fired: " + rule);
+//                        }
+//                        ruleMatchState |= evaluatedMask;
+//                        rule.ruleAction.fire(baseState, engineFactState);
+//                    }
+//                } else if (rule.matchType == Rule.MATCH_RESET
+//                        && (ruleMatchState & evaluatedMask) != 0) {
+//                    if (LOG.isLoggable(Level.FINE)) {
+//                        LOG.fine("Rule reset: " + rule);
+//                    }
+//                    ruleMatchState ^= evaluatedMask;
+//                }
+//            }
+//            evaluatedMask <<= 1;
+        }
+    }
+
+    protected void matchRule(final R rule) {
+        if (rule.eval(baseState.state)) {
+            if (LOG.isLoggable(Level.FINE)) {
+                LOG.fine("Rule fired: " + rule);
             }
-            evaluatedMask <<= 1;
+            rule.ruleAction.fire(baseState, getWritableState());
         }
     }
 }

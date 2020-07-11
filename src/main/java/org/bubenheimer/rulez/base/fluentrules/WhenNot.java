@@ -15,56 +15,48 @@
  *
  */
 
-package org.bubenheimer.rulez.fluent;
+package org.bubenheimer.rulez.base.fluentrules;
 
-import org.bubenheimer.rulez.Fact;
-import org.bubenheimer.rulez.Rule;
-import org.bubenheimer.rulez.RuleAction;
+import org.bubenheimer.rulez.base.Fact;
+import org.bubenheimer.rulez.base.Rule;
+import org.bubenheimer.rulez.base.RuleAction;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 @SuppressWarnings("WeakerAccess")
-public final class When {
-    private final Rule rule;
+public final class WhenNot <F extends Fact, R extends Rule<F>> {
+    private final R rule;
 
-    private final Collection<Fact> facts = new ArrayList<>();
+    private final Collection<F> facts = new ArrayList<>();
 
-    When(final Rule rule) {
+    WhenNot(final R rule) {
         this.rule = rule;
     }
 
-    public When and(final Fact fact) {
+    public WhenNot<F,R> and(final F fact) {
         facts.add(fact);
         return this;
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public When or(final Fact fact) {
-        completeConjunction();
+    public WhenNot<F,R> or(final F fact) {
+        consumeConjunction();
         facts.add(fact);
         return this;
     }
 
     @SuppressWarnings("unused")
-    public WhenNot andNot(final Fact fact) {
-        completeConjunction();
-        final WhenNot whenNot = new WhenNot(rule);
-        whenNot.or(fact);
-        return whenNot;
-    }
-
-    @SuppressWarnings("unused")
-    public Rule then(final RuleAction ruleAction) {
-        completeConjunction();
-        rule.setRuleAction(ruleAction);
+    public R then(final RuleAction<F> ruleAction) {
+        consumeConjunction();
+        rule.ruleAction = ruleAction;
         return rule;
     }
 
-    public void completeConjunction(
+    private void consumeConjunction(
     ) {
         if (!facts.isEmpty()) {
-            rule.addCondition(facts);
+            rule.addNegCondition(facts);
             facts.clear();
         }
     }

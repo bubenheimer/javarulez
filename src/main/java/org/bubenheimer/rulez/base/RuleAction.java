@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,17 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
+
+import org.bubenheimer.rulez.base.Fact;
+import org.bubenheimer.rulez.base.ReadableState;
+import org.bubenheimer.rulez.base.WritableState;
 
 /**
  * Represents the action (right-hand side) of a rule with code to execute if the left-hand side
  * matches during rule evaluation.
  */
-public interface RuleAction {
+public interface RuleAction <F extends Fact> {
     /**
      * A rule action with code to execute.
      * @param oldState the old fact state. Only valid for the duration of this call. Do not store
@@ -29,5 +33,5 @@ public interface RuleAction {
      * @param newState the new fact state. Only valid for the duration of this call. Do not store
      *                 a reference to this object.
      */
-    void fire(ReadableState oldState, WritableState newState);
+    void fire(ReadableState<F> oldState, WritableState<F> newState);
 }

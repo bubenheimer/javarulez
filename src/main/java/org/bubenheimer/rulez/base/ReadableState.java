@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
 
 /**
- * Listener to be invoked when rule evaluation ends.
- * Set this via {@link RuleEngine#setEvalEndListener(EvalEndListener)}.
+ * API for checking the fact state
  */
 @SuppressWarnings("WeakerAccess")
-public interface EvalEndListener {
+public interface ReadableState <F extends Fact> {
     /**
-     * Invoked when rule evaluation ends.
-     * @param engine the rule engine
+     * @return whether the fact is valid (true)
      */
-    void onEvalEnd(final RuleEngine engine);
+    @SuppressWarnings("unused")
+    boolean isValid(F fact);
 }

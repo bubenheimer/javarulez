@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Uli Bubenheimer
+ * Copyright (c) 2015-2020 Uli Bubenheimer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  *
  */
 
-package org.bubenheimer.rulez;
+package org.bubenheimer.rulez.base;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,44 +25,38 @@ import java.util.List;
 /**
  * A rule
  */
-public final class Rule {
+public class Rule <F extends Fact> {
+//    /**
+//     * Match eligibility type. Specifies whether a rule may match repeatedly or only once.
+//     */
+//    @SuppressWarnings("WeakerAccess")
+//    @Retention(RetentionPolicy.SOURCE)
+//    public @interface MatchType {}
+//
+//    /**
+//     * Specifies to match and fire a rule no more than once
+//     */
+//    @SuppressWarnings("WeakerAccess")
+//    public static final int MATCH_ONCE = 0;
+//
+//    /**
+//     * Specifies to re-match and re-fire a rule after its left-hand side no longer matches
+//     */
+//    @SuppressWarnings("WeakerAccess")
+//    public static final int MATCH_RESET = 1;
+//
+//    /**
+//     * Specifies to always re-match and re-fire a rule
+//     */
+//    @SuppressWarnings("WeakerAccess")
+//    public static final int MATCH_ALWAYS = 2;
 
-    /**
-     * Match eligibility type. Specifies whether a rule may match repeatedly or only once.
-     */
-    @SuppressWarnings("WeakerAccess")
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface MatchType {}
-
-    /**
-     * Specifies to match and fire a rule no more than once
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final int MATCH_ONCE = 0;
-
-    /**
-     * Specifies to re-match and re-fire a rule after its left-hand side no longer matches
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final int MATCH_RESET = 1;
-
-    /**
-     * Specifies to always re-match and re-fire a rule
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final int MATCH_ALWAYS = 2;
-
-    /**
-     * Rule name
-     */
-    private final String name;
-
-    /**
-     * Rule match type. Specifies if a rule should match no more than once, or under what
-     * conditions it becomes eligible to re-match.
-     */
-    @MatchType
-    final int matchType;
+//    /**
+//     * Rule match type. Specifies if a rule should match no more than once, or under what
+//     * conditions it becomes eligible to re-match.
+//     */
+//    @MatchType
+//    final int matchType;
 
     /**
      * The positive facts of the rule's left-hand side.
@@ -79,44 +71,49 @@ public final class Rule {
     /**
      * The rule action to execute when the rule fires.
      */
-    RuleAction ruleAction;
+    public RuleAction<F> ruleAction;
+
+//    /**
+//     * Create a rule.
+//     */
+//    public Rule(final Collection<Integer> conditions) {
+//        this.conditions.addAll(conditions);
+//    }
 
     /**
      * Create a rule.
-     * @param name         the rule name for debugging
-     * @param matchType    the rule match type
+//     * @param matchType    the rule match type
      */
     @SuppressWarnings("WeakerAccess")
-    public Rule(final String name, @MatchType final int matchType) {
-        this.name = name;
-        this.matchType = matchType;
+    public Rule(/*@MatchType final int matchType*/) {
+//        this.matchType = matchType;
     }
 
-    /**
-     * @return the rule name
-     */
-    @SuppressWarnings("unused")
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * @return the match type
-     */
-    @SuppressWarnings("unused")
-    public int getMatchType() {
-        return matchType;
-    }
+//    /**
+//     * @return the match type
+//     */
+//    @SuppressWarnings("unused")
+//    public int getMatchType() {
+//        return matchType;
+//    }
 
     /**
      * Add a conjunction of facts to the rule's left-hand side.
      * @param facts the conjunction of facts
      */
-    public void addCondition(final Collection<Fact> facts) {
+    public void addCondition(final Collection<F> facts) {
         int factVector = 0;
         for (final Fact fact : facts) {
             factVector |= 1 << fact.id;
         }
+        addCondition(factVector);
+    }
+
+    /**
+     * Add a conjunction of facts to the rule's left-hand side.
+     * @param factVector the conjunction of facts
+     */
+    public void addCondition(final int factVector) {
         conditions.add(factVector);
     }
 
@@ -124,20 +121,12 @@ public final class Rule {
      * Add a conjunction of negated facts to the rule's left-hand side.
      * @param facts the conjunction of facts
      */
-    public void addNegCondition(final Collection<Fact> facts) {
+    public void addNegCondition(final Collection<F> facts) {
         int factVector = 0;
         for (final Fact fact : facts) {
             factVector |= 1 << fact.id;
         }
         negConditions.add(factVector);
-    }
-
-    /**
-     * Specifies the rule's executable action (right-hand side)
-     * @param ruleAction the rule action
-     */
-    public void setRuleAction(final RuleAction ruleAction) {
-        this.ruleAction = ruleAction;
     }
 
     /**
@@ -162,17 +151,17 @@ public final class Rule {
         return Collections.unmodifiableList(negConditions);
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
+//    @Override
+//    public String toString() {
+//        return name;
+//    }
 
     /**
      * Evaluates the rule's left-hand side
      * @param state the fact state to use for evaluation
      * @return whether the left-hand side matches the fact state
      */
-    boolean eval(final int state) {
+    public boolean eval(final int state) {
         for (final int condition : conditions) {
             if ((state & condition) != condition) {
                 return false;
