@@ -17,6 +17,8 @@
 
 package org.bubenheimer.rulez.base;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,13 +42,13 @@ public abstract class RuleEngine <F extends Fact, R extends Rule<F>> {
     /**
      * The rule base.
      */
-    private final RuleBase<F,R> ruleBase;
+    private final @NotNull RuleBase<F,R> ruleBase;
 
     /**
-     * @param factState the fact state (bit vector); may be modified
-     * @param ruleBase the rule base (may overwrite initial fact state)
+     * @param factState the fact state (bit vector)
+     * @param ruleBase the rule base
      */
-    public RuleEngine(final FactState<F> factState, final RuleBase<F, R> ruleBase) {
+    public RuleEngine(final FactState<F> factState, final @NotNull RuleBase<F, R> ruleBase) {
         this.engineFactState = new EngineFactState<>(this, factState);
         this.ruleBase = ruleBase;
     }
@@ -93,7 +95,7 @@ public abstract class RuleEngine <F extends Fact, R extends Rule<F>> {
      * @return the rule base.
      */
     @SuppressWarnings("WeakerAccess")
-    public final RuleBase<F,R> getRuleBase() {
+    public final @NotNull RuleBase<F,R> getRuleBase() {
         return ruleBase;
     }
 

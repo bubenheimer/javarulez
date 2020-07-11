@@ -23,6 +23,7 @@ import org.bubenheimer.rulez.base.ReadableState;
 import org.bubenheimer.rulez.base.Rule;
 import org.bubenheimer.rulez.base.RuleBase;
 import org.bubenheimer.rulez.base.RuleEngine;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,13 +76,17 @@ public class BreadthFirstRuleEngine <F extends Fact, R extends Rule<F>> extends 
          */
         int state;
 
+        //TODO bug?
         @Override
         public boolean isValid(final F fact) {
             return false;
         }
     }
 
-    public BreadthFirstRuleEngine(final FactState<F> factState, final RuleBase<F, R> ruleBase) {
+    public BreadthFirstRuleEngine(
+            final FactState<F> factState,
+            final @NotNull RuleBase<F, R> ruleBase
+    ) {
         super(factState, ruleBase);
 //        this(ruleBase, factState, 0);
     }
@@ -127,10 +132,7 @@ public class BreadthFirstRuleEngine <F extends Fact, R extends Rule<F>> extends 
      */
     @SuppressWarnings("WeakerAccess")
     protected final void evaluate() {
-        final RuleBase<F,R> ruleBase = getRuleBase();
-        if (ruleBase == null) {
-            return;
-        }
+        final @NotNull RuleBase<F,R> ruleBase = getRuleBase();
         baseState.state = getFactState().getState();
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine("Evaluating: " + formatState(baseState.state));
