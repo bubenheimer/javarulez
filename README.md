@@ -1,6 +1,11 @@
 # Java Rulez
 #### An efficient rule engine for Java
 
+*This project is discontinued in favor of [KotlinRulez](https://github.com/bubenheimer/kotlinrulez).
+A potentially useful, yet largely untested refactor is found in the
+[Refactor_Abandoned](https://github.com/bubenheimer/javarulez/tree/Refactor-Abandoned) branch.
+The refactor turned into the [KotlinRulez](https://github.com/bubenheimer/kotlinrulez) project.*
+
 Ready for production use.
 
 I have found the rule engine a great pattern for Android app initialization handling,
